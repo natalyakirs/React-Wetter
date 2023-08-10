@@ -1,37 +1,65 @@
-//import { useState } from 'react'
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; //  these components set up navigation and handle different views or pages in React application. The BrowserRouter is used as a wrapper around your components, and Route components define what content should be rendered based on the current URL. The Switch component ensures that only the first matching route is rendered.
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import Home from './components/Home';
-import WeatherDisplay from './components/WeatherDisplay';
-//import reactLogo from './assets/react.svg'
-//import viteLogo from '/vite.svg'
-import './App.css'
+import Button from '@mui/material/Button';
+import { useState } from 'react';
+import TextField from '@mui/material/TextField';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import { useNavigate } from 'react-router-dom'; //
 
-const theme = createTheme({  //create a custom theme
-  palette: {
-    primary: {
-      main: '#2196f3', // Customize the primary color
-    },
-    secondary: {
-      main: '#f50057', // Customize the secondary color
-    },
-  },
-});
 
-function App() {
+export default function App() {
+  const [location, setLocation] = useState('');
+  const [results, setResults] = useState([]);
+  const navigate = useNavigate();//
+
+
+
   return (
-    <ThemeProvider theme={theme}>
-      <Router>
-        <Routes> {/* Use Routes instead of Router */}
-          {/* The "element" prop is used to render the component for each route */}
-          <Route path="/" element={<Home />} />
-          {/* Use the "path" prop to define the URL pattern and "element" to render the component */}
-          <Route path="/weather/:lat/:lon" element={<WeatherDisplay />} />
-        </Routes>
-      </Router>
-    </ThemeProvider>
+    <>
+      <TextField
+        label="Standort"
+        onChange={(event) => {
+          setLocation(event.target.value);
+        }}
+        value={location}
+      />
+
+      <Button
+  onClick={async () => {      // TODO: handle click  --> alert('clicked');
+    try {
+      const cleanLocation = encodeURIComponent(location.trim());
+      const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${cleanLocation}`);
+      const data = await response.json();
+      setResults(data.results);
+    } catch(err) {
+      console.error(err);
+    }
+  }}
+>Senden</Button>
+
+<List>
+  { results.map((location) => {
+    return (
+      <ListItem key={location.id}>
+
+        <ListItemButton
+        onClick={() => {
+  const lat = location.latitude.toString().replace('.', '_');
+  const lng = location.longitude.toString().replace('.', '_');
+  navigate(`/${lat}/${lng}`);
+}}>
+        
+          <ListItemText
+            primary={location.name}
+            secondary={location.admin1 ? `${location.admin1}, ${location.country}` : location.country}
+          />
+        </ListItemButton>
+      </ListItem>
+    );
+  }) }
+</List>
+    </>
   );
 }
 
-export default App;
